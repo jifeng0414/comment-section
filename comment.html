@@ -4,119 +4,110 @@
 <meta charset="UTF-8">
 <title>Comment Section</title>
 <style>
-body { font-family: sans-serif; margin: 0; padding: 20px; }
-.comment-container { width: 420px; max-width: 90%; margin: 0 auto 20px; padding: 20px; border: 1px solid #333; border-radius: 6px; background: transparent; }
-.comment-container textarea { width: 100%; padding: 10px; border: 1px solid #333; border-radius: 4px; resize: none; font-size: 14px; }
-.comment-container input[type="file"] { width: 100%; margin: 12px 0; }
-.comment-container button { width: 100%; padding: 10px; border: 1px solid #333; border-radius: 4px; background: transparent; cursor: pointer; }
-.comment-list { width: 440px; max-width: 90%; margin: 0 auto; padding: 18px; border: 1px solid #333; border-radius: 6px; }
-.single-comment { border: 1px solid #333; border-radius: 4px; padding: 12px; margin-bottom: 12px; font-size: 14px; }
+body { font-family: sans-serif; margin: 0; padding: 20px; background: transparent; }
+#comment-container {
+    width: 100%; 
+    max-width: 600px; 
+    margin: 0 auto; 
+    padding: 20px; 
+    border: 1px solid #333; 
+    border-radius: 8px; 
+    background: #fff; 
+    box-sizing: border-box;
+}
+#comment-container textarea { width: 100%; padding: 10px; font-size: 14px; border: 1px solid #333; border-radius: 4px; resize: none; box-sizing: border-box; }
+#comment-container input[type="file"] { width: 100%; margin: 12px 0; }
+#comment-container button { width: 100%; padding: 10px; border: 1px solid #333; border-radius: 4px; background: transparent; cursor: pointer; }
+#commentStatus { margin-top: 8px; font-size: 13px; color: green; }
+#comment-list { margin-top: 20px; max-height: 300px; overflow-y: auto; border: 1px solid #333; border-radius: 6px; padding: 12px; }
+.single-comment { border: 1px solid #333; border-radius: 4px; padding: 12px; margin-bottom: 12px; font-size: 14px; word-break: break-word; }
 .single-comment img { max-width: 100%; border: 1px solid #333; border-radius: 4px; margin-top: 8px; }
 </style>
 </head>
 <body>
 
-<div class="comment-container">
+<div id="comment-container">
   <textarea id="commentText" placeholder="Write a comment..."></textarea>
   <input type="file" id="commentImage" accept="image/*">
   <button id="submitComment">Submit</button>
+  <p id="commentStatus"></p>
+  <div id="comment-list"></div>
 </div>
 
-<div class="comment-list" id="commentList"></div>
-
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbysEe_RsU8v3yEcqvo7Ojq9qXBb-K1A6puEHGFj6Fzl9qtL4ePd_2oS-bmq1lTjhcSc/exec";
+document.addEventListener("DOMContentLoaded", function() {
+    const API_URL = "https://script.google.com/macros/s/AKfycbysEe_RsU8v3yEcqvo7Ojq9qXBb-K1A6puEHGFj6Fzl9qtL4ePd_2oS-bmq1lTjhcSc/exec";
 
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    if (!file) return resolve("");
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = e => reject(e);
-    reader.readAsDataURL(file);
-  });
-}
-
-async function submitComment() {
-  const text = document.getElementById("commentText").value.trim();
-  const file = document.getElementById("commentImage").files[0];
-  const image = await toBase64(file);
-  if (!text && !image) return;
-  await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, image })
-  });
-  document.getElementById("commentText").value = "";
-  document.getElementById("commentImage").value = "";
-  loadComments();
-}
-
-document.getElementById("submitComment").addEventListener("click", submitComment);
-
-async function loadComments() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    const list = document.getElementById("commentList");
-    list.innerHTML = "";
-    data.reverse().forEach(c => {
-      const div = document.createElement("div");
-      div.className = "single-comment";
-      div.innerHTML = `<p>${c.text}</p>${c.image ? `<img src="${c.image}">` : ""}`;
-      list.appendChild(div);
-    });
-  } catch(e) {
-    console.error("加载评论失败:", e);
-  }
-}
-
-loadComments();
-  // 每次加载评论或提交后更新 iframe 高度
-function updateIframeHeight() {
-    if (window.parent) {
-        const height = document.body.scrollHeight;
-        window.parent.postMessage({ iframeHeight: height }, '*');
-    }
-}
-
-// 在加载评论后调用
-loadComments = async function() {
-    const list = document.getElementById("comment-list");
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        list.innerHTML = "";
-        data.reverse().forEach(c => {
-            const div = document.createElement("div");
-            div.className = "single-comment";
-            div.innerHTML = `<p>${c.text}</p>${c.image ? `<img src="${c.image}">` : ""}`;
-            list.appendChild(div);
+    function toBase64(file){
+        return new Promise((resolve,reject)=>{
+            if(!file) return resolve("");
+            const reader = new FileReader();
+            reader.onload = ()=>resolve(reader.result);
+            reader.onerror = e=>reject(e);
+            reader.readAsDataURL(file);
         });
-    } catch(e) {
-        console.error(e);
-        list.innerHTML = "<p style='text-align:center; color:red;'>Failed to load comments.</p>";
     }
-    updateIframeHeight(); // 更新高度
-}
 
-// 提交评论后也更新高度
-async function submitComment() {
-    const text = document.getElementById("commentText").value.trim();
-    const file = document.getElementById("commentImage").files[0];
-    const status = document.getElementById("commentStatus");
-    if (!text && !file) { status.style.color="red"; status.textContent="Please write something or select an image."; return; }
-    status.style.color = "black"; status.textContent = "Submitting...";
-    try {
-        const image = await toBase64(file);
-        await fetch(API_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text,image}) });
-        document.getElementById("commentText").value="";
-        document.getElementById("commentImage").value="";
-        status.style.color="green"; status.textContent="Comment submitted successfully!";
-        loadComments(); // 更新评论列表
-    } catch(e) { console.error(e); status.style.color="red"; status.textContent="Failed to submit comment."; }
-}
+    async function submitComment(){
+        const text = document.getElementById("commentText").value.trim();
+        const file = document.getElementById("commentImage").files[0];
+        const status = document.getElementById("commentStatus");
 
+        if(!text && !file){
+            status.style.color = "red";
+            status.textContent = "Please write something or select an image.";
+            return;
+        }
+
+        status.style.color = "black";
+        status.textContent = "Submitting...";
+
+        try{
+            const image = await toBase64(file);
+            await fetch(API_URL, {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({text, image})
+            });
+
+            document.getElementById("commentText").value = "";
+            document.getElementById("commentImage").value = "";
+            status.style.color = "green";
+            status.textContent = "Comment submitted successfully!";
+            loadComments();
+        } catch(e){
+            console.error(e);
+            status.style.color = "red";
+            status.textContent = "Failed to submit comment.";
+        }
+    }
+
+    async function loadComments(){
+        const list = document.getElementById("comment-list");
+        try{
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            list.innerHTML = "";
+            data.reverse().forEach(c=>{
+                const div = document.createElement("div");
+                div.className = "single-comment";
+                div.innerHTML = `<p>${c.text}</p>${c.image?`<img src="${c.image}">`:''}`;
+                list.appendChild(div);
+            });
+        } catch(e){
+            console.error(e);
+            list.innerHTML = "<p style='text-align:center; color:red;'>Failed to load comments.</p>";
+        }
+        // 自动调整 iframe 高度
+        if(window.parent) window.parent.postMessage({iframeHeight: document.body.scrollHeight}, '*');
+    }
+
+    document.getElementById("submitComment").addEventListener("click", submitComment);
+
+    loadComments();
+    setInterval(loadComments, 30000); // 每30秒刷新一次评论
+});
 </script>
+
 </body>
 </html>
