@@ -4,8 +4,12 @@
 <meta charset="UTF-8">
 <title>Comment Section</title>
 <style>
-body { font-family: sans-serif; margin:0; padding:20px; background:transparent; }
-#comment-container { width:100%; max-width:600px; margin:0 auto; padding:20px; border:1px solid #333; border-radius:8px; background:#fff; box-sizing:border-box; }
+body { font-family:sans-serif; margin:0; padding:0; background:transparent; }
+#comment-container {
+    width:90%; max-width:600px; margin:50px auto;
+    padding:20px; border:1px solid #333; border-radius:8px; background:#fff;
+    box-sizing:border-box;
+}
 #comment-container textarea { width:100%; padding:10px; font-size:14px; border:1px solid #333; border-radius:4px; resize:none; box-sizing:border-box; }
 #comment-container input[type="file"] { width:100%; margin:12px 0; }
 #comment-container button { width:100%; padding:10px; border:1px solid #333; border-radius:4px; background:transparent; cursor:pointer; }
@@ -27,7 +31,7 @@ body { font-family: sans-serif; margin:0; padding:20px; background:transparent; 
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    const API_URL = "https://script.google.com/macros/s/AKfycbxMyIuE5yWl8QtVp9IC4z8fOe5WfXQQn0iqFXb6ldnXTfj1A-LgSo4YidvJQEXePEqr/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbw_0E9tGMxgsp4ml0D5Je3IurPZ_CeTovYDIw1GvjFj9SVM9IfnAif8r679vZ_GDj5rVg/exec";
 
     function toBase64(file){
         return new Promise((resolve,reject)=>{
@@ -55,10 +59,11 @@ document.addEventListener("DOMContentLoaded", function() {
 
         try{
             const image = await toBase64(file);
-            await fetch(API_URL,{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({text,image})
+
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({text,image})
             });
 
             document.getElementById("commentText").value="";
@@ -77,7 +82,8 @@ document.addEventListener("DOMContentLoaded", function() {
         const list = document.getElementById("comment-list");
         try{
             const res = await fetch(API_URL);
-            const data = await res.json();
+            const text = await res.text();
+            const data = JSON.parse(text);
             list.innerHTML="";
             data.reverse().forEach(c=>{
                 const div = document.createElement("div");
@@ -89,12 +95,13 @@ document.addEventListener("DOMContentLoaded", function() {
             console.error(e);
             list.innerHTML="<p style='text-align:center; color:red;'>Failed to load comments.</p>";
         }
+
         if(window.parent) window.parent.postMessage({iframeHeight: document.body.scrollHeight}, '*');
     }
 
     document.getElementById("submitComment").addEventListener("click", submitComment);
     loadComments();
-    setInterval(loadComments,30000);
+    setInterval(loadComments, 30000);
 });
 </script>
 
