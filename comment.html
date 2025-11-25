@@ -72,6 +72,51 @@ async function loadComments() {
 }
 
 loadComments();
+  // 每次加载评论或提交后更新 iframe 高度
+function updateIframeHeight() {
+    if (window.parent) {
+        const height = document.body.scrollHeight;
+        window.parent.postMessage({ iframeHeight: height }, '*');
+    }
+}
+
+// 在加载评论后调用
+loadComments = async function() {
+    const list = document.getElementById("comment-list");
+    try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        list.innerHTML = "";
+        data.reverse().forEach(c => {
+            const div = document.createElement("div");
+            div.className = "single-comment";
+            div.innerHTML = `<p>${c.text}</p>${c.image ? `<img src="${c.image}">` : ""}`;
+            list.appendChild(div);
+        });
+    } catch(e) {
+        console.error(e);
+        list.innerHTML = "<p style='text-align:center; color:red;'>Failed to load comments.</p>";
+    }
+    updateIframeHeight(); // 更新高度
+}
+
+// 提交评论后也更新高度
+async function submitComment() {
+    const text = document.getElementById("commentText").value.trim();
+    const file = document.getElementById("commentImage").files[0];
+    const status = document.getElementById("commentStatus");
+    if (!text && !file) { status.style.color="red"; status.textContent="Please write something or select an image."; return; }
+    status.style.color = "black"; status.textContent = "Submitting...";
+    try {
+        const image = await toBase64(file);
+        await fetch(API_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text,image}) });
+        document.getElementById("commentText").value="";
+        document.getElementById("commentImage").value="";
+        status.style.color="green"; status.textContent="Comment submitted successfully!";
+        loadComments(); // 更新评论列表
+    } catch(e) { console.error(e); status.style.color="red"; status.textContent="Failed to submit comment."; }
+}
+
 </script>
 </body>
 </html>
