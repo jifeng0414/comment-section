@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <title>Comment Section</title>
 <style>
-body { font-family:sans-serif; margin:0; padding:0; background:transparent; }
+html, body { margin:0; padding:0; background:transparent; height:100%; display:flex; justify-content:center; align-items:center; }
 #comment-container {
-    width:90%; max-width:600px; margin:50px auto;
-    padding:20px; border:1px solid #333; border-radius:8px; background:#fff;
+    width:90%; max-width:600px; padding:20px;
+    border:1px solid #333; border-radius:8px; background:#fff;
     box-sizing:border-box;
 }
 #comment-container textarea { width:100%; padding:10px; font-size:14px; border:1px solid #333; border-radius:4px; resize:none; box-sizing:border-box; }
@@ -60,6 +60,7 @@ document.addEventListener("DOMContentLoaded", function() {
         try{
             const image = await toBase64(file);
 
+            // POST 以 text/plain，防止触发 CORS preflight
             await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -96,6 +97,7 @@ document.addEventListener("DOMContentLoaded", function() {
             list.innerHTML="<p style='text-align:center; color:red;'>Failed to load comments.</p>";
         }
 
+        // 调整 iframe 高度
         if(window.parent) window.parent.postMessage({iframeHeight: document.body.scrollHeight}, '*');
     }
 
